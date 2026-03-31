@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NexusAI — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #050a12;
+      --surface:     #0b1220;
+      --surface2:    #0f1929;
+      --border:      rgba(0,210,255,.12);
+      --border-glow: rgba(0,210,255,.4);
+      --accent:      #00d2ff;
+      --accent2:     #7b61ff;
+      --accent3:     #00ffc8;
+      --text:        #e2eaf4;
+      --text-muted:  #5c7a99;
+      --error:       #ff4d6d;
+      --font-ui:     'Syne', 'Segoe UI', sans-serif;
+      --font-mono:   'DM Mono', 'Consolas', monospace;
+      --radius:      14px;
+      --radius-sm:   8px;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      overflow-x: hidden;
+    }
+
+    /* ── Background ──────────────────────────────────────────── */
+    .bg-mesh {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+    }
+    .bg-mesh::before {
+      content: '';
+      position: absolute; inset: -60%;
+      background:
+        radial-gradient(ellipse 55% 45% at 15% 25%, rgba(0,210,255,.09) 0%, transparent 55%),
+        radial-gradient(ellipse 45% 55% at 85% 75%, rgba(123,97,255,.09) 0%, transparent 55%),
+        radial-gradient(ellipse 35% 50% at 60% 5%,  rgba(0,255,200,.05) 0%, transparent 55%);
+      animation: meshDrift 20s ease-in-out infinite alternate;
+    }
+    @keyframes meshDrift {
+      from { transform: translate(0,0) rotate(0deg); }
+      to   { transform: translate(3%,4%) rotate(3deg); }
+    }
+    .bg-grid {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(0,210,255,.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,210,255,.022) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* Floating particles */
+    .particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    .particle {
+      position: absolute;
+      width: 2px; height: 2px; border-radius: 50%;
+      background: var(--accent); opacity: 0;
+      animation: particleFly linear infinite;
+    }
+    @keyframes particleFly {
+      0%   { opacity: 0; transform: translateY(100vh) scale(0); }
+      10%  { opacity: .6; }
+      90%  { opacity: .3; }
+      100% { opacity: 0; transform: translateY(-20px) scale(1.5); }
+    }
+
+    /* ── Page layout ─────────────────────────────────────────── */
+    .page {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* ── Left panel — branding ───────────────────────────────── */
+    .brand-panel {
+      display: flex; flex-direction: column;
+      justify-content: center; padding: 60px 56px;
+      border-right: 1px solid var(--border);
+      animation: slideInLeft .8s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-40px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .brand-logo {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 64px;
+    }
+    .brand-icon {
+      width: 48px; height: 48px; position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-icon svg { width: 100%; height: 100%; }
+    .brand-ring {
+      position: absolute; inset: -5px; border-radius: 50%;
+      border: 1.5px solid var(--accent); opacity: .35;
+      animation: spin 10s linear infinite;
+    }
+    .brand-ring-2 {
+      position: absolute; inset: -12px; border-radius: 50%;
+      border: 1px solid var(--accent2); opacity: .15;
+      animation: spin 16s linear infinite reverse;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .brand-name {
+      font-size: 1.4rem; font-weight: 800; letter-spacing: .05em;
+      background: linear-gradient(120deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .brand-tag {
+      font-size: .68rem; letter-spacing: .14em; color: var(--text-muted);
+      text-transform: uppercase; font-family: var(--font-mono); margin-top: 3px;
+    }
+
+    .brand-headline {
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 800; line-height: 1.15;
+      margin-bottom: 20px; letter-spacing: -.01em;
+    }
+    .brand-headline .grad {
+      background: linear-gradient(135deg, var(--accent), var(--accent2) 60%, var(--accent3));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .brand-sub {
+      font-size: .95rem; color: var(--text-muted);
+      line-height: 1.7; max-width: 380px; margin-bottom: 48px;
+    }
+
+    .feature-list { display: flex; flex-direction: column; gap: 16px; }
+    .feature-item {
+      display: flex; align-items: center; gap: 14px;
+      animation: fadeUp .6s ease both;
+    }
+    .feature-item:nth-child(1) { animation-delay: .2s; }
+    .feature-item:nth-child(2) { animation-delay: .35s; }
+    .feature-item:nth-child(3) { animation-delay: .5s; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .feature-dot {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,210,255,.08);
+      border: 1px solid rgba(0,210,255,.18);
+      font-size: 1rem;
+    }
+    .feature-text strong { display: block; font-size: .88rem; font-weight: 700; margin-bottom: 2px; }
+    .feature-text span   { font-size: .78rem; color: var(--text-muted); font-family: var(--font-mono); }
+
+    /* ── Right panel — form ──────────────────────────────────── */
+    .form-panel {
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: 60px 48px;
+      animation: slideInRight .8s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(40px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .form-card {
+      width: 100%; max-width: 400px;
+    }
+
+    .form-header { margin-bottom: 36px; }
+    .form-header h1 {
+      font-size: 1.8rem; font-weight: 800; margin-bottom: 8px;
+    }
+    .form-header p {
+      font-size: .85rem; color: var(--text-muted); font-family: var(--font-mono);
+    }
+    .form-header p a {
+      color: var(--accent); text-decoration: none; font-weight: 500;
+      transition: opacity .2s;
+    }
+    .form-header p a:hover { opacity: .75; }
+
+    /* Fields */
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block; font-size: .75rem; font-weight: 600;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 8px;
+      font-family: var(--font-mono);
+    }
+    .input-wrap { position: relative; }
+    .input-wrap .icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px; opacity: .4; pointer-events: none;
+    }
+    .input-wrap input {
+      width: 100%; padding: 13px 14px 13px 42px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text); font-family: var(--font-ui); font-size: .9rem;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    .input-wrap input::placeholder { color: var(--text-muted); }
+    .input-wrap input:focus {
+      border-color: var(--border-glow);
+      box-shadow: 0 0 0 3px rgba(0,210,255,.07), 0 0 20px rgba(0,210,255,.08);
+    }
+    .input-wrap input.error { border-color: var(--error); }
+
+    .toggle-pw {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; padding: 0;
+      color: var(--text-muted); opacity: .5; transition: opacity .2s;
+    }
+    .toggle-pw:hover { opacity: 1; }
+
+    .field-error {
+      font-size: .72rem; color: var(--error);
+      font-family: var(--font-mono); margin-top: 5px;
+      display: none;
+    }
+    .field-error.show { display: block; }
+
+    .form-options {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; margin-top: -4px;
+    }
+    .remember {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .78rem; color: var(--text-muted); cursor: pointer;
+      font-family: var(--font-mono);
+    }
+    .remember input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; }
+    .forgot {
+      font-size: .78rem; color: var(--accent);
+      text-decoration: none; font-family: var(--font-mono);
+      transition: opacity .2s;
+    }
+    .forgot:hover { opacity: .7; }
+
+    /* Submit button */
+    .btn-primary {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border: none; border-radius: var(--radius-sm);
+      color: #fff; font-family: var(--font-ui); font-size: .95rem; font-weight: 700;
+      cursor: pointer; letter-spacing: .02em;
+      transition: all .2s;
+      box-shadow: 0 0 24px rgba(0,210,255,.2);
+      position: relative; overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.1), transparent);
+      opacity: 0; transition: opacity .2s;
+    }
+    .btn-primary:hover::after { opacity: 1; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 36px rgba(0,210,255,.35); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    /* Divider */
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 24px 0;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .divider span {
+      font-size: .72rem; color: var(--text-muted);
+      font-family: var(--font-mono); white-space: nowrap;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 22px;
+      font-family: var(--font-mono); font-size: .78rem; color: var(--text-muted);
+      opacity: 0; transition: transform .3s, opacity .3s; z-index: 99;
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { color: var(--accent3); border-color: rgba(0,255,200,.25); }
+    .toast.fail    { color: var(--error);   border-color: rgba(255,77,109,.25); }
+
+    /* Loading spinner inside button */
+    .spinner {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle; margin-right: 8px;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .page { grid-template-columns: 1fr; }
+      .brand-panel { display: none; }
+      .form-panel { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+<div class="bg-grid"></div>
+
+<!-- Floating particles -->
+<div class="particles" id="particles"></div>
+
+<div class="page">
+
+  <!-- ── Left: Branding ── -->
+  <div class="brand-panel">
+    <div class="brand-logo">
+      <div class="brand-icon">
+        <div class="brand-ring"></div>
+        <div class="brand-ring-2"></div>
+        <svg viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="15" stroke="#00d2ff" stroke-width="1.5"/>
+          <path d="M15 24c0-4.97 4.03-9 9-9s9 4.03 9 9" stroke="#7b61ff" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="24" cy="28" r="3.5" fill="#00d2ff" opacity=".85"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">NexusAI</div>
+        <div class="brand-tag">Cloud Intelligence Platform</div>
+      </div>
+    </div>
+
+    <h2 class="brand-headline">
+      Your cloud-powered<br/>
+      <span class="grad">AI assistant</span><br/>
+      awaits.
+    </h2>
+    <p class="brand-sub">
+      Sign in to access NexusAI — an intelligent cloud chatbot built on
+      cutting-edge language models with real-time Firebase persistence.
+    </p>
+
+    <div class="feature-list">
+      <div class="feature-item">
+        <div class="feature-dot">⚡</div>
+        <div class="feature-text">
+          <strong>Real-time AI Responses</strong>
+          <span>Powered by OpenRouter LLM infrastructure</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-dot">☁</div>
+        <div class="feature-text">
+          <strong>Cloud Chat History</strong>
+          <span>Every session saved to Firebase Firestore</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-dot">🔒</div>
+        <div class="feature-text">
+          <strong>Secure & Private</strong>
+          <span>Session-isolated data, no data sharing</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right: Login Form ── -->
+  <div class="form-panel">
+    <div class="form-card">
+
+      <div class="form-header">
+        <h1>Welcome back</h1>
+        <p>Don't have an account? <a href="/register">Create one →</a></p>
+      </div>
+
+      <form id="loginForm" novalidate>
+
+        <div class="field">
+          <label for="email">Email address</label>
+          <div class="input-wrap">
+            <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="#00d2ff" stroke-width="1.4">
+              <rect x="1" y="3" width="14" height="10" rx="2"/>
+              <path d="M1 6l7 4 7-4"/>
+            </svg>
+            <input type="email" id="email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <div class="field-error" id="emailError">Please enter a valid email address.</div>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="#00d2ff" stroke-width="1.4">
+              <rect x="3" y="7" width="10" height="7" rx="1.5"/>
+              <path d="M5 7V5a3 3 0 016 0v2"/>
+            </svg>
+            <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password"/>
+            <button type="button" class="toggle-pw" onclick="togglePw('password', this)" title="Show password">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/>
+                <circle cx="8" cy="8" r="2"/>
+              </svg>
+            </button>
+          </div>
+          <div class="field-error" id="passwordError">Password must be at least 6 characters.</div>
+        </div>
+
+        <div class="form-options">
+          <label class="remember">
+            <input type="checkbox" id="remember"/> Remember me
+          </label>
+          <a href="#" class="forgot">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn-primary" id="loginBtn">
+          Sign in to NexusAI
+        </button>
+
+      </form>
+
+      <div class="divider"><span>Cloud Computing Mini-Project · 2026</span></div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Particles script -->
+<script>
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.cssText = `
+      left: ${Math.random() * 100}%;
+      animation-duration: ${6 + Math.random() * 10}s;
+      animation-delay: ${Math.random() * 8}s;
+      width: ${1 + Math.random() * 2}px;
+      height: ${1 + Math.random() * 2}px;
+      background: ${Math.random() > .5 ? '#00d2ff' : '#7b61ff'};
+    `;
+    container.appendChild(p);
+  }
+</script>
+
+<!-- Firebase Auth + Form logic -->
+<script type="module">
+  import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID"
+  };
+
+  // ── Helper functions ──────────────────────────────────────
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 3500);
+  }
+
+  function setLoading(on) {
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = on;
+    btn.innerHTML = on
+      ? '<span class="spinner"></span>Signing in…'
+      : 'Sign in to NexusAI';
+  }
+
+  function validateEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+  function showError(id, show) {
+    const el  = document.getElementById(id + 'Error');
+    const inp = document.getElementById(id);
+    el.classList.toggle('show', show);
+    inp.classList.toggle('error', show);
+  }
+
+  // ── Toggle password visibility ────────────────────────────
+  window.togglePw = function(id, btn) {
+    const inp = document.getElementById(id);
+    inp.type  = inp.type === 'password' ? 'text' : 'password';
+    btn.style.opacity = inp.type === 'text' ? '1' : '.5';
+  };
+
+  // ── Skip login if already signed in ──────────────────────
+  if (!firebaseConfig.apiKey.startsWith('YOUR_')) {
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, user => {
+      if (user) window.location.href = '/chat';
+    });
+
+    // ── Form submit ───────────────────────────────────────
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      let valid = true;
+      if (!validateEmail(email)) { showError('email', true); valid = false; }
+      else                        { showError('email', false); }
+      if (password.length < 6)   { showError('password', true); valid = false; }
+      else                        { showError('password', false); }
+      if (!valid) return;
+
+      setLoading(true);
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        showToast('✅ Signed in! Redirecting…', 'success');
+        setTimeout(() => window.location.href = '/chat', 1000);
+      } catch (err) {
+        setLoading(false);
+        const map = {
+          'auth/user-not-found':  '⚠ No account found with this email.',
+          'auth/wrong-password':  '⚠ Incorrect password.',
+          'auth/invalid-email':   '⚠ Invalid email address.',
+          'auth/too-many-requests': '⚠ Too many attempts. Try again later.',
+          'auth/invalid-credential': '⚠ Invalid email or password.',
+        };
+        showToast(map[err.code] || '⚠ Login failed: ' + err.message, 'fail');
+      }
+    });
+
+  } else {
+    // ── Demo mode: Firebase not configured yet ────────────
+    console.warn('[Firebase] Config not set — running in demo mode.');
+
+    document.getElementById('loginForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      let valid = true;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('email', true); valid = false; }
+      else showError('email', false);
+      if (password.length < 6) { showError('password', true); valid = false; }
+      else showError('password', false);
+      if (!valid) return;
+      setLoading(true);
+      setTimeout(() => { window.location.href = '/chat'; }, 800);
+    });
+
+    function showError(id, show) {
+      document.getElementById(id+'Error').classList.toggle('show', show);
+      document.getElementById(id).classList.toggle('error', show);
+    }
+    function setLoading(on) {
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = on;
+      btn.innerHTML = on ? '<span class="spinner"></span>Signing in…' : 'Sign in to NexusAI';
+    }
+    function showToast(msg, type='') {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = 'toast show ' + type;
+      setTimeout(() => t.className = 'toast', 3500);
+    }
+  }
+</script>
+
+</body>
+</html>
